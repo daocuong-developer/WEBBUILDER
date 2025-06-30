@@ -26,6 +26,7 @@ import { handleExport } from "@/utils/exportHtml";
 import { useSave } from "@/contexts/SaveContext";
 import { toast } from "react-toastify";
 import PreviewModal from "@/pages/PreviewModal";
+import { useUndo } from "@/contexts/UndoContext";
 
 export default function Navbar({ handleSave }) {
   const [showPosts, setShowPosts] = useState(false);
@@ -38,11 +39,13 @@ export default function Navbar({ handleSave }) {
   const [showPageManager, setShowPageManager] = useState(false);
   const [showPagesDropdown, setShowPagesDropdown] = useState(false);
 
-  const pages = JSON.parse(localStorage.getItem("pages")) || [];
-  const currentPageId = localStorage.getItem("currentPageId");
-  const currentPage = pages.find((p) => p.id === currentPageId);
-  const posts = JSON.parse(localStorage.getItem("posts")) || [];
-  const navigate = useNavigate();
+    const pages = JSON.parse(localStorage.getItem("pages")) || [];
+    const currentPageId = localStorage.getItem("currentPageId");
+    const currentPage = pages.find((p) => p.id === currentPageId);
+    const posts = JSON.parse(localStorage.getItem("posts")) || [];
+    const navigate = useNavigate();
+    const { recordState, handleUndo, handleRedo, canUndo, canRedo } = useUndo();
+
 
   const [projects, setProjects] = useState(() => {
     const saved = localStorage.getItem("projects");
@@ -146,7 +149,7 @@ export default function Navbar({ handleSave }) {
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <Folder size={16} /> {project.name}
+                        <Folder size={16} /> {project.name}
                     </button>
                   ))}
                   <div className="border-t my-1" />

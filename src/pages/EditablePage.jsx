@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react"; // Xóa useRef
-import { LayoutTemplate, Package, ChevronDown, ChevronRight, Undo, Redo, Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { LayoutTemplate, Package, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -24,161 +24,88 @@ function SortableItem({ block, children }) {
 }
 
 export default function EditablePage() {
-    // Lấy tất cả các giá trị cần thiết từ useUndo
-    const { recordState, handleUndo, handleRedo, canUndo, canRedo, currentBlocks } = useUndo();
-
-    // blocks giờ đây là biến cục bộ, lấy giá trị từ currentBlocks của context.
-    // Khi currentBlocks thay đổi, EditablePage sẽ tự động re-render.
-    const blocks = currentBlocks || [];
-
+    const [blocks, setBlocks] = useState([]);
     const [selectedBlockId, setSelectedBlockId] = useState(null);
     const { id } = useParams();
     const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
     const isContainerSelected = selectedBlock?.type === "container";
     const { setSaveFn } = useSave();
     const [expandedBlocks, setExpandedBlocks] = useState({});
+    const { recordState, handleUndo, handleRedo, canUndo, canRedo } = useUndo();
 
-
-    // Effect để lưu trạng thái hiện tại vào localStorage thông qua SaveContext
     useEffect(() => {
         setSaveFn(() => () => {
             const dataToSave = JSON.stringify(blocks);
             localStorage.setItem(`page_data_${id}`, dataToSave);
             toast.success("Saved successfully!");
         });
-    }, [blocks, id, setSaveFn]);
+    }, [blocks, id]);
 
-    // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT LẦN
-    // Đây là nơi duy nhất chúng ta sẽ chủ động gọi recordState để thiết lập trạng thái khởi tạo.
     useEffect(() => {
         const saved = localStorage.getItem(`page_data_${id}`);
-        const initialBlocks = saved ? JSON.parse(saved) : [];
+        setBlocks(saved ? JSON.parse(saved) : []);
+    }, [id]);
 
-        // So sánh trực tiếp với currentBlocks từ context.
-        // Nếu context chưa có gì hoặc khác với dữ liệu đã lưu, thì recordState.
-        // Đây là điểm khởi đầu cho trạng thái trong context.
-        // Chỉ chạy một lần trên component mount (do deps là []).
-        if (!blocks.length && initialBlocks.length > 0) { // Chỉ record nếu blocks rỗng và có dữ liệu lưu
-             recordState(initialBlocks);
-        }
-        
-        // Lắng nghe sự kiện 'update-blocks' từ UndoContext để đảm bảo `selectedBlockId` hợp lệ
+    useEffect(() => {
         const handleUpdateBlocks = () => {
-            if (selectedBlockId && !currentBlocks.some(b => b.id === selectedBlockId)) {
-                setSelectedBlockId(null);
-            }
+            const saved = localStorage.getItem("currentBlocks");
+            if (saved) setBlocks(JSON.parse(saved));
         };
 
         window.addEventListener("update-blocks", handleUpdateBlocks);
         return () => window.removeEventListener("update-blocks", handleUpdateBlocks);
-    }, [id, recordState, selectedBlockId, blocks.length]); // Thêm blocks.length vào dependencies
+    }, []);
 
-    // ADD BLOCK
     const addBlock = (type, parentId = null) => {
         const newBlock = { id: Date.now().toString(), type, props: getDefaultProps(type) };
-        let updatedBlocks;
 
-        if (parentId) {
-            updatedBlocks = blocks.map((b) =>
-                b.id === parentId
-                    ? {
-                          ...b,
-                          props: {
-                              ...b.props,
-                              children: [...(b.props.children || []), newBlock.id],
-                          },
-                      }
-                    : b
-            );
-            updatedBlocks = [...updatedBlocks, newBlock];
-        } else {
-            updatedBlocks = [...blocks, newBlock];
-        }
-        recordState(updatedBlocks);
-        setSelectedBlockId(newBlock.id);
+        setBlocks((prev) => {
+            const updated = [...prev, newBlock];
+            const newState = parentId
+                ? updated.map((b) =>
+                      b.id === parentId
+                          ? {
+                                ...b,
+                                props: {
+                                    ...b.props,
+                                    children: [...(b.props.children || []), newBlock.id],
+                                },
+                            }
+                          : b
+                  )
+                : updated;
+
+            recordState(newState);
+            return newState;
+        });
+
+        if (!parentId) setSelectedBlockId(newBlock.id);
     };
 
-    // UPDATE BLOCK
-    const updateBlock = useCallback((updatedBlock) => {
-        const updateRecursive = (blocksArray) =>
-            blocksArray.map((block) => {
-                if (block.id === updatedBlock.id) return updatedBlock;
+    const updateBlock = (updatedBlock) => {
+        const updateRecursive = (blocks) =>
+            blocks.map((block) => {
+                if (block.id === updatedBlock.id) {
+                    return updatedBlock;
+                }
 
                 if (block.type === "container" && Array.isArray(block.props.children)) {
-                    // Lấy các đối tượng con thực sự để đệ quy
-                    const childrenActualObjects = block.props.children
-                                                    .map(childId => blocks.find(b => b.id === childId))
-                                                    .filter(Boolean);
-                    const updatedChildren = updateRecursive(childrenActualObjects);
+                    const updatedChildren = updateRecursive(block.props.children);
                     return {
                         ...block,
                         props: {
                             ...block.props,
-                            children: updatedChildren.map(c => c.id),
+                            children: updatedChildren,
                         },
                     };
                 }
+
                 return block;
             });
 
-        const newBlocksState = updateRecursive(blocks);
-        recordState(newBlocksState);
-    }, [blocks, recordState]);
-
-    // DELETE BLOCK
-    const handleDeleteBlock = useCallback((idToDelete) => {
-        const findAllChildIds = (parentId) => {
-            const block = blocks.find((b) => b.id === parentId);
-            if (!block?.props?.children) return [parentId];
-            return [parentId, ...block.props.children.flatMap(findAllChildIds)];
-        };
-        const idsToDelete = new Set(findAllChildIds(idToDelete));
-        const newBlocks = blocks.filter((b) => !idsToDelete.has(b.id));
+        const newBlocks = updateRecursive(blocks);
+        setBlocks(newBlocks);
         recordState(newBlocks);
-        if (selectedBlockId === idToDelete) {
-            setSelectedBlockId(null);
-        }
-    }, [blocks, recordState, selectedBlockId]);
-
-    // MOVE ELEMENT
-    const handleMoveElement = useCallback((id, direction) => {
-        const index = blocks.findIndex((b) => b.id === id);
-        if (index < 0) return;
-
-        const parent = blocks.find((b) => b.props?.children?.includes(id));
-        if (parent) {
-            const children = [...parent.props.children];
-            const childIndex = children.indexOf(id);
-            const newIndex = childIndex + direction;
-
-            if (newIndex < 0 || newIndex >= children.length) return;
-
-            children.splice(childIndex, 1);
-            children.splice(newIndex, 0, id);
-
-            const updatedParent = {
-                ...parent,
-                props: {
-                    ...parent.props,
-                    children,
-                },
-            };
-
-            const newBlocks = blocks.map((b) => (b.id === parent.id ? updatedParent : b));
-            recordState(newBlocks);
-        } else {
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= blocks.length) return blocks; // Trả về blocks nếu không hợp lệ
-
-            const newBlocks = [...blocks];
-            const [moved] = newBlocks.splice(index, 1);
-            newBlocks.splice(newIndex, 0, moved);
-            recordState(newBlocks);
-        }
-    }, [blocks, recordState]);
-
-    const toggleExpand = (blockId) => {
-        setExpandedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
     };
 
     const renderTree = (block, level = 0) => {
@@ -194,10 +121,7 @@ export default function EditablePage() {
                         selectedBlockId === block.id ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"
                     }`}
                     style={{ paddingLeft: `${level * 16}px` }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedBlockId(block.id);
-                    }}
+                    onClick={() => setSelectedBlockId(block.id)}
                 >
                     <div className="flex items-center gap-1">
                         {isContainer ? <LayoutTemplate size={16} /> : <Package size={16} />}
@@ -220,7 +144,64 @@ export default function EditablePage() {
         );
     };
 
+    const toggleExpand = (blockId) => setExpandedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
+
+    const handleDeleteBlock = (id) => {
+        setBlocks((prev) => {
+            const findAllChildIds = (parentId) => {
+                const block = prev.find((b) => b.id === parentId);
+                if (!block?.props?.children) return [parentId];
+                return [parentId, ...block.props.children.flatMap(findAllChildIds)];
+            };
+            const idsToDelete = new Set(findAllChildIds(id));
+            const newBlocks = prev.filter((b) => !idsToDelete.has(b.id));
+            recordState(newBlocks);
+            return newBlocks;
+        });
+        if (selectedBlockId === id) setSelectedBlockId(null);
+    };
+
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+    const handleMoveElement = (id, direction) => {
+        setBlocks((prev) => {
+            const index = prev.findIndex((b) => b.id === id);
+            if (index < 0) return prev;
+
+            const parent = prev.find((b) => b.props?.children?.includes(id));
+            if (parent) {
+                const children = [...parent.props.children];
+                const childIndex = children.indexOf(id);
+                const newIndex = childIndex + direction;
+
+                if (newIndex < 0 || newIndex >= children.length) return prev;
+
+                children.splice(childIndex, 1);
+                children.splice(newIndex, 0, id);
+
+                const updatedParent = {
+                    ...parent,
+                    props: {
+                        ...parent.props,
+                        children,
+                    },
+                };
+
+                const newBlocks = prev.map((b) => (b.id === parent.id ? updatedParent : b));
+                recordState(newBlocks);
+                return newBlocks;
+            }
+
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= prev.length) return prev;
+
+            const newBlocks = [...prev];
+            const [moved] = newBlocks.splice(index, 1);
+            newBlocks.splice(newIndex, 0, moved);
+            recordState(newBlocks);
+            return newBlocks;
+        });
+    };
 
     return (
         <div className="flex h-screen overflow-hidden">
@@ -230,10 +211,6 @@ export default function EditablePage() {
                 selectedElement={blocks.find((b) => b.id === selectedBlockId)}
                 onSelectElement={(el) => setSelectedBlockId(el.id)}
                 onMoveElement={handleMoveElement}
-                handleUndo={handleUndo}
-                handleRedo={handleRedo}
-                canUndo={canUndo}
-                canRedo={canRedo}
             />
 
             <DndContext
@@ -241,12 +218,15 @@ export default function EditablePage() {
                 collisionDetection={closestCenter}
                 onDragEnd={({ active, over }) => {
                     if (!over || active.id === over.id) return;
-                    const activeIndex = blocks.findIndex((b) => b.id === active.id);
-                    const overIndex = blocks.findIndex((b) => b.id === over.id);
-                    const isChild = (id) => blocks.some((b) => b.props.children?.includes(id));
-                    if (isChild(active.id) || isChild(over.id)) return;
-                    const newBlocks = arrayMove(blocks, activeIndex, overIndex);
-                    recordState(newBlocks);
+                    setBlocks((prev) => {
+                        const activeIndex = prev.findIndex((b) => b.id === active.id);
+                        const overIndex = prev.findIndex((b) => b.id === over.id);
+                        const isChild = (id) => prev.some((b) => b.props.children?.includes(id));
+                        if (isChild(active.id) || isChild(over.id)) return prev;
+                        const newBlocks = arrayMove(prev, activeIndex, overIndex);
+                        recordState(newBlocks);
+                        return newBlocks;
+                    });
                 }}
             >
                 <SortableContext
@@ -277,7 +257,7 @@ export default function EditablePage() {
                                             }}
                                             className="absolute z-10 top-2 right-2 hidden group-hover:flex items-center justify-center bg-red-500 text-white p-1 rounded hover:bg-red-600"
                                         >
-                                            <Trash2 size={"18px"} />
+                                            <Trash2 size="18px" />
                                         </button>
                                         <RenderBlockComponent
                                             block={block}
@@ -299,23 +279,6 @@ export default function EditablePage() {
                     {blocks
                         .filter((b) => !blocks.some((p) => p.props.children?.includes(b.id)))
                         .map((block) => renderTree(block))}
-                </div>
-
-                <div className="flex gap-2 justify-end mt-4">
-                    <button
-                        onClick={handleUndo}
-                        disabled={!canUndo}
-                        className={`p-2 rounded ${canUndo ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-                    >
-                        <Undo size={20} />
-                    </button>
-                    <button
-                        onClick={handleRedo}
-                        disabled={!canRedo}
-                        className={`p-2 rounded ${canRedo ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-                    >
-                        <Redo size={20} />
-                    </button>
                 </div>
 
                 <div className="border-t pt-4">
