@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Home, ChevronLeft, ChevronRight } from "lucide-react";
-import RenderBlock from "@/components/renderBlock";
+import RenderBlock from "@/components/RenderBlock";
 
 export default function PreviewModal({ open, onClose, device }) {
     const [pages, setPages] = useState([]);

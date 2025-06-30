@@ -1,7 +1,7 @@
 // src/components/Blocks/ContainerBlock.jsx
 import React from "react";
 import getDefaultProps from "@/utils/defaultProps";
-import RenderBlockComponent from "@/components/renderBlock";
+import RenderBlockComponent from "@/components/RenderBlock";
 
 const ContainerBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     const props = {

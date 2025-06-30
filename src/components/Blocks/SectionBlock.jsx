@@ -1,7 +1,7 @@
 // src/components/Blocks/SectionBlock.jsx
 import React from "react";
 import getDefaultProps from "@/utils/defaultProps";
-import RenderBlockComponent from "@/components/renderBlock";
+import RenderBlockComponent from "@/components/RenderBlock";
 
 const SectionBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     const props = {
