@@ -27,6 +27,7 @@ import { handleExport } from "@/utils/exportHtml";
 import { useSave } from "@/contexts/SaveContext";
 import { toast } from "react-toastify";
 import PreviewModal from "@/pages/PreviewModal";
+import { useUndo } from "@/contexts/UndoContext";
 
 export default function Navbar({ handleSave }) {
     const [showPosts, setShowPosts] = useState(false);
@@ -45,6 +46,7 @@ export default function Navbar({ handleSave }) {
     const currentPage = pages.find((p) => p.id === currentPageId);
     const posts = JSON.parse(localStorage.getItem("posts")) || [];
     const navigate = useNavigate();
+    const { recordState, handleUndo, handleRedo, canUndo, canRedo } = useUndo();
 
     const [projects, setProjects] = useState(() => {
         const saved = localStorage.getItem("projects");
@@ -251,7 +253,6 @@ export default function Navbar({ handleSave }) {
                     {showProjectManager && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
                             <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 relative">
-                                {/* Truyền handleProjectsUpdate và setCurrentProject xuống ProjectManager */}
                                 <ProjectManager
                                     onClose={() => setShowProjectManager(false)}
                                     onProjectsUpdate={handleProjectsUpdate}
@@ -288,6 +289,24 @@ export default function Navbar({ handleSave }) {
                                 <PostManager onClose={() => setShowPosts(false)} />
                             </div>
                         )}
+                    </div>
+
+                    {/* Undo/Redo buttons */}
+                    <div className="  flex gap-2">
+                        <button
+                            onClick={handleUndo}
+                            disabled={!canUndo}
+                            className="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 px-3 py-1 rounded shadow"
+                        >
+                            <Undo />
+                        </button>
+                        <button
+                            onClick={handleRedo}
+                            disabled={!canRedo}
+                            className="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 px-3 py-1 rounded shadow"
+                        >
+                            <Redo />
+                        </button>
                     </div>
 
                     {/* Device Toggle */}
