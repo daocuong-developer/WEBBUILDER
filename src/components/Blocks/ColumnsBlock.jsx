@@ -68,7 +68,17 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
   return (
     <div
       style={columnsStyle}
-      onClick={onSelect ? (e) => onSelect(block.id) : undefined}
+      onClick={
+        onSelect
+          ? (e) => {
+              // Chỉ select columns khi click trực tiếp vào nó, không phải vào children
+              if (e.target === e.currentTarget) {
+                e.stopPropagation();
+                onSelect(block.id);
+              }
+            }
+          : undefined
+      }
       className={onSelect ? "editor-block-outline" : ""}
     >
       {columnChildren}

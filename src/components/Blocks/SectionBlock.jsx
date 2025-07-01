@@ -17,12 +17,26 @@ const SectionBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     boxSizing: "border-box", // Để padding không làm tràn width
   };
 
-  const children = Array.isArray(block.children) ? block.children : [];
+  const children = Array.isArray(block.children)
+    ? block.children
+    : Array.isArray(block.props?.children)
+      ? block.props.children
+      : [];
 
   return (
     <section
       style={sectionStyle}
-      onClick={onSelect ? (e) => onSelect(block.id) : undefined}
+      onClick={
+        onSelect
+          ? (e) => {
+              // Chỉ select section khi click trực tiếp vào nó, không phải vào children
+              if (e.target === e.currentTarget) {
+                e.stopPropagation();
+                onSelect(block.id);
+              }
+            }
+          : undefined
+      }
       className={onSelect ? "editor-block-outline" : ""}
     >
       {children.length > 0

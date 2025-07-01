@@ -52,23 +52,25 @@ export default function PreviewModal({ open, onClose }) {
   // Close mobile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showMobileDropdown && !event.target.closest('.mobile-dropdown-container')) {
+      if (
+        showMobileDropdown &&
+        !event.target.closest(".mobile-dropdown-container")
+      ) {
         setShowMobileDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showMobileDropdown]);
 
   const currentPage = pages[currentPageIndex];
 
-  const currentBlocks =
-    currentPage?.id === localStorage.getItem("currentPageId")
-      ? JSON.parse(localStorage.getItem(`page_data_${currentPage?.id}`)) || []
-      : [];
+  const currentBlocks = currentPage?.id
+    ? JSON.parse(localStorage.getItem(`page_data_${currentPage.id}`)) || []
+    : [];
   // Get current device dimensions
   const getCurrentDeviceDimensions = () => {
     if (device === "mobile") {
@@ -165,21 +167,25 @@ export default function PreviewModal({ open, onClose }) {
                   </button>
                   {showMobileDropdown && (
                     <div className="absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[200px]">
-                      {Object.entries(devicePresets.mobile).map(([key, preset]) => (
-                        <button
-                          key={key}
-                          onClick={() => {
-                            setMobileDevice(key);
-                            setShowMobileDropdown(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
-                            mobileDevice === key ? "bg-blue-50" : ""
-                          }`}
-                        >
-                          <div className="font-medium">{preset.name}</div>
-                          <div className="text-gray-500 text-xs">{preset.width} × {preset.height}</div>
-                        </button>
-                      ))}
+                      {Object.entries(devicePresets.mobile).map(
+                        ([key, preset]) => (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setMobileDevice(key);
+                              setShowMobileDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
+                              mobileDevice === key ? "bg-blue-50" : ""
+                            }`}
+                          >
+                            <div className="font-medium">{preset.name}</div>
+                            <div className="text-gray-500 text-xs">
+                              {preset.width} × {preset.height}
+                            </div>
+                          </button>
+                        ),
+                      )}
                     </div>
                   )}
                 </div>

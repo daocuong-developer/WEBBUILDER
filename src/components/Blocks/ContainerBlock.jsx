@@ -61,20 +61,17 @@ const ContainerBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
         ...baseStyle,
         ...layoutStyle,
       }}
-      // onClick={
-      //     onSelect
-      //         ? (e) => {
-      //               e.stopPropagation(); // ⚠️ CHẶN click bubble lên container
-      //               onSelect(block.id);
-      //           }
-      //         : undefined
-      // }
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          e.stopPropagation();
-          onSelect(block.id);
-        }
-      }}
+      onClick={
+        onSelect
+          ? (e) => {
+              // Chỉ select container khi click trực tiếp vào nó, không phải vào children
+              if (e.target === e.currentTarget) {
+                e.stopPropagation();
+                onSelect(block.id);
+              }
+            }
+          : undefined
+      }
       className={onSelect ? "editor-block-outline" : ""}
     >
       {children.length > 0
@@ -84,17 +81,29 @@ const ContainerBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
               <div
                 key={childBlock.id}
                 style={{
-                  // Margin bottom chỉ áp dụng nếu là block layout và không phải phần tử cuối cùng
-                  ...(layoutType === "block" &&
-                    children.indexOf(childId) !== children.length - 1 &&
-                    props.gap && { marginBottom: props.gap }),
                   // Thêm style cho phần tử con trong container để dễ nhìn trong editor
                   ...(onSelect && {
                     border: "1px dashed #d1d5db",
                     borderRadius: "4px",
                     padding: "4px",
-                    margin: "4px",
                     boxSizing: "border-box", // Ensure padding doesn't push elements out
+                  }),
+                  // Margin bottom chỉ áp dụng nếu là block layout và không phải phần tử cuối cùng
+                  // Sử dụng marginBottom thay vì margin để tránh conflict
+                  ...(layoutType === "block" &&
+                    children.indexOf(childId) !== children.length - 1 &&
+                    props.gap && { marginBottom: props.gap }),
+                  // Override margin cho editor nếu có gap
+                  ...(onSelect && {
+                    marginTop: "4px",
+                    marginLeft: "4px",
+                    marginRight: "4px",
+                    // marginBottom sẽ được set bởi gap logic ở trên, hoặc default 4px
+                    ...(!(
+                      layoutType === "block" &&
+                      children.indexOf(childId) !== children.length - 1 &&
+                      props.gap
+                    ) && { marginBottom: "4px" }),
                   }),
                 }}
               >
