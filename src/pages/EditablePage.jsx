@@ -167,7 +167,7 @@ export default function EditablePage() {
     [blocks, recordState],
   );
 
-  // DELETE BLOCK
+  // DELETE BLOCK (with all children)
   const handleDeleteBlock = useCallback(
     (idToDelete) => {
       const findAllChildIds = (parentId) => {
@@ -178,6 +178,60 @@ export default function EditablePage() {
       const idsToDelete = new Set(findAllChildIds(idToDelete));
       const newBlocks = blocks.filter((b) => !idsToDelete.has(b.id));
       recordState(newBlocks);
+      if (selectedBlockId === idToDelete) {
+        setSelectedBlockId(null);
+      }
+    },
+    [blocks, recordState, selectedBlockId],
+  );
+
+  // DELETE SINGLE COMPONENT (without children)
+  const handleDeleteSingleComponent = useCallback(
+    (idToDelete) => {
+      const blockToDelete = blocks.find((b) => b.id === idToDelete);
+      if (!blockToDelete) return;
+
+      // If the component has children, move them to its parent
+      if (blockToDelete.props?.children) {
+        const parent = blocks.find((b) =>
+          b.props?.children?.includes(idToDelete),
+        );
+        if (parent) {
+          // Remove the component from parent's children and add its children
+          const newChildren = parent.props.children.reduce((acc, childId) => {
+            if (childId === idToDelete) {
+              return [...acc, ...blockToDelete.props.children];
+            }
+            return [...acc, childId];
+          }, []);
+
+          const updatedBlocks = blocks.map((b) => {
+            if (b.id === parent.id) {
+              return {
+                ...b,
+                props: {
+                  ...b.props,
+                  children: newChildren,
+                },
+              };
+            }
+            return b;
+          });
+
+          // Remove the component itself
+          const newBlocks = updatedBlocks.filter((b) => b.id !== idToDelete);
+          recordState(newBlocks);
+        } else {
+          // If no parent, just remove the component and its children become root elements
+          const newBlocks = blocks.filter((b) => b.id !== idToDelete);
+          recordState(newBlocks);
+        }
+      } else {
+        // No children, just remove the component
+        const newBlocks = blocks.filter((b) => b.id !== idToDelete);
+        recordState(newBlocks);
+      }
+
       if (selectedBlockId === idToDelete) {
         setSelectedBlockId(null);
       }
@@ -395,7 +449,11 @@ export default function EditablePage() {
         <div className="border-t pt-4">
           <h2 className="text-lg font-semibold mb-2">Properties</h2>
           {selectedBlock ? (
-            <PropertyPanel block={selectedBlock} onChange={updateBlock} />
+            <PropertyPanel
+              block={selectedBlock}
+              onChange={updateBlock}
+              onDelete={() => handleDeleteSingleComponent(selectedBlock.id)}
+            />
           ) : (
             <p className="text-gray-500 text-sm">
               Select an element to edit its properties

@@ -59,98 +59,122 @@
 
 // src/components/PropertyPanel/properties/ImageOptions.jsx
 import React from "react";
+import DeleteButton from "./DeleteButton";
 
-const ImageOptions = ({ block, handleChange }) => (
-    <>
-        {/* Image URL */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                value={block.props.src || ""}
-                onChange={(e) => handleChange("src", e.target.value)}
-            />
-        </div>
+const ImageOptions = ({ block, handleChange, onDelete }) => (
+  <div className="space-y-4">
+    {/* Image URL */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Image URL
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        value={block.props.src || ""}
+        onChange={(e) => handleChange("src", e.target.value)}
+      />
+    </div>
 
-        {/* Upload Image */}
-        <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
-            <input
-                type="file"
-                accept="image/*"
-                className="w-full"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        const localUrl = URL.createObjectURL(file);
-                        handleChange("src", localUrl);
-                    }
-                }}
-            />
-        </div>
+    {/* Upload Image */}
+    <div className="mt-2">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Upload Image
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        className="w-full"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const localUrl = URL.createObjectURL(file);
+            handleChange("src", localUrl);
+          }
+        }}
+      />
+    </div>
 
-        {/* Alt Text */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alt Text</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                value={block.props.alt || ""}
-                onChange={(e) => handleChange("alt", e.target.value)}
-            />
-        </div>
+    {/* Alt Text */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Alt Text
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        value={block.props.alt || ""}
+        onChange={(e) => handleChange("alt", e.target.value)}
+      />
+    </div>
 
-        {/* Width */}
-        <div className="mt-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Width (px)</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                type="number"
-                value={block.props.width || ""}
-                onChange={(e) => handleChange("width", e.target.value)}
-            />
-        </div>
+    {/* Width */}
+    <div className="mt-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Width (px)
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        type="number"
+        value={block.props.width || ""}
+        onChange={(e) => handleChange("width", e.target.value)}
+      />
+    </div>
 
-        {/* Height */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Height (px)</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                type="number"
-                value={block.props.height || ""}
-                onChange={(e) => handleChange("height", e.target.value)}
-            />
-        </div>
+    {/* Height */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Height (px)
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        type="number"
+        value={block.props.height || ""}
+        onChange={(e) => handleChange("height", e.target.value)}
+      />
+    </div>
 
-        {/* Border Radius */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Border Radius</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                value={block.props.borderRadius || ""}
-                onChange={(e) => handleChange("borderRadius", e.target.value)}
-            />
-        </div>
+    {/* Border Radius */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Border Radius
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        value={block.props.borderRadius || ""}
+        onChange={(e) => handleChange("borderRadius", e.target.value)}
+      />
+    </div>
 
-        {/* Shadow */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Shadow</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                value={block.props.shadow || ""}
-                onChange={(e) => handleChange("shadow", e.target.value)}
-            />
-        </div>
+    {/* Shadow */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Shadow
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        value={block.props.shadow || ""}
+        onChange={(e) => handleChange("shadow", e.target.value)}
+      />
+    </div>
 
-        {/* Click Action */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Click Action (URL/Popup)</label>
-            <input
-                className="w-full border rounded px-2 py-1"
-                value={block.props.onClickAction || ""}
-                onChange={(e) => handleChange("onClickAction", e.target.value)}
-            />
-        </div>
-    </>
+    {/* Click Action */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Click Action (URL/Popup)
+      </label>
+      <input
+        className="w-full border rounded px-2 py-1"
+        value={block.props.onClickAction || ""}
+        onChange={(e) => handleChange("onClickAction", e.target.value)}
+      />
+    </div>
+
+    {/* DELETE COMPONENT */}
+    {onDelete && (
+      <div className="pt-4 border-t">
+        <DeleteButton onDelete={onDelete} />
+      </div>
+    )}
+  </div>
 );
 
 export default ImageOptions;

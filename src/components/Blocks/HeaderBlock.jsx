@@ -1,6 +1,6 @@
 import React from "react";
 
-const HeaderBlock = ({ block }) => {
+const HeaderBlock = ({ block, onSelect }) => {
   const props = block.props || {};
 
   const headerStyle = {
@@ -22,8 +22,8 @@ const HeaderBlock = ({ block }) => {
       props.navAlignment === "left"
         ? "flex-start"
         : props.navAlignment === "center"
-        ? "center"
-        : "flex-end",
+          ? "center"
+          : "flex-end",
     alignItems: "center",
     gap: "20px",
     fontSize: props.navLinkFontSize || "16px",
@@ -53,8 +53,15 @@ const HeaderBlock = ({ block }) => {
     position: "relative",
   };
 
+  const handleClick = (e) => {
+    if (onSelect) {
+      e.stopPropagation();
+      onSelect(block.id);
+    }
+  };
+
   return (
-    <header style={headerStyle}>
+    <header style={headerStyle} onClick={handleClick}>
       <div
         style={{
           maxWidth: "1200px",
