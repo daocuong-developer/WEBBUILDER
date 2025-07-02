@@ -26,26 +26,35 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
   // Tạo mảng các cột rỗng nếu số lượng con ít hơn số cột
   const columnChildren = Array.from({ length: numColumns }).map(
     (_, colIndex) => {
-      // Trong trường hợp này, children của ColumnsBlock là ID của các container con (columns)
-      // Mỗi container con sẽ chứa các block thực tế
       const columnId = children[colIndex];
       const columnBlock = blocks?.find((b) => b.id === columnId);
 
+      // Nếu là cột rỗng, thêm onClick để chọn ColumnsBlock
+      const isEmpty = !columnBlock;
       return (
         <div
-          key={columnId || `empty-col-${colIndex}`} // Key duy nhất cho mỗi cột
+          key={columnId || `empty-col-${colIndex}`}
           style={{
-            border: onSelect && !columnBlock ? "1px dashed #ccc" : "none", // Đường viền cho cột rỗng
-            minHeight: onSelect && !columnBlock ? "80px" : "auto", // Chiều cao tối thiểu cho cột rỗng
+            border: onSelect && isEmpty ? "1px dashed #ccc" : "none",
+            minHeight: onSelect && isEmpty ? "80px" : "auto",
             display: "flex",
             flexDirection: "column",
             alignItems: "stretch",
             justifyContent: "flex-start",
-            padding: onSelect && !columnBlock ? "10px" : "0",
+            padding: onSelect && isEmpty ? "10px" : "0",
             boxSizing: "border-box",
           }}
+          onClick={
+            isEmpty && onSelect
+              ? (e) => {
+                e.stopPropagation();
+                onSelect(block.id);
+              }
+              : undefined
+          }
         >
           {columnBlock ? (
+            // Render column block, column block sẽ tự render các block con thực tế của nó
             <RenderBlockComponent
               block={columnBlock}
               blocks={blocks}
@@ -71,12 +80,13 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
       onClick={
         onSelect
           ? (e) => {
-              // Chỉ select columns khi click trực tiếp vào nó, không phải vào children
-              if (e.target === e.currentTarget) {
-                e.stopPropagation();
-                onSelect(block.id);
-              }
+            // Chỉ select columns khi click trực tiếp vào nó, không phải vào children
+            if (e.target === e.currentTarget) {
+              e.stopPropagation();
+              // console.log("Select ColumnsBlock", block.id);
+              onSelect(block.id);
             }
+          }
           : undefined
       }
       className={onSelect ? "editor-block-outline" : ""}
