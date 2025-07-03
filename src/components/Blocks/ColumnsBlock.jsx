@@ -153,8 +153,20 @@ const ColumnsBlock = ({
               ) : null;
             })
           : !isPreview && (
-              <div className="text-sm text-gray-400 italic text-center p-4 flex-1 flex items-center justify-center">
-                Drop elements here
+              <div className="text-sm text-gray-400 italic text-center p-4 flex-1 flex items-center justify-center flex-col gap-2">
+                {isSelected ? (
+                  <div className="text-green-600 font-semibold">
+                    ✓ Selected Column {columnIndex + 1}
+                    <div className="text-xs text-green-500">
+                      Click components to add here
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    Click to select column
+                    <div className="text-xs">Then click components to add</div>
+                  </div>
+                )}
               </div>
             )}
       </div>
