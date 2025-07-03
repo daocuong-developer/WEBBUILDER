@@ -344,9 +344,23 @@ export default function EditablePage() {
   const renderTree = (block, level = 0) => {
     if (!block) return null;
     const isExpanded = expandedBlocks[block.id] ?? true;
-    const children = block.props.children
-      ?.map((id) => blocks.find((b) => b.id === id))
-      .filter(Boolean);
+
+    // Handle different children structures
+    let children = [];
+
+    if (block.type === "columns") {
+      // For columns, flatten the 2D array structure
+      const columnChildren = block.children || block.props?.children || [];
+      children = columnChildren
+        .flat()
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter(Boolean);
+    } else {
+      // For regular containers
+      children = (block.props?.children || block.children || [])
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter(Boolean);
+    }
     const isContainer = block.type === "container";
 
     return (
