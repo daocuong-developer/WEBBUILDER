@@ -84,7 +84,7 @@ export default function EditablePage() {
 
     // So sánh trực tiếp với currentBlocks từ context.
     // Nếu context chưa có gì hoặc khác với dữ liệu đã lưu, thì recordState.
-    // Đ��y là điểm khởi đầu cho trạng thái trong context.
+    // Đ����y là điểm khởi đầu cho trạng thái trong context.
     // Chỉ chạy một lần trên component mount (do deps là []).
     if (!blocks.length && initialBlocks.length > 0) {
       // Chỉ record nếu blocks rỗng và có dữ liệu lưu
@@ -750,9 +750,28 @@ export default function EditablePage() {
         <div className="min-h-[250px] max-h-64 overflow-auto border rounded p-2">
           <h2 className="text-lg font-semibold mb-2">Page Structure</h2>
           {blocks
-            .filter(
-              (b) => !blocks.some((p) => p.props.children?.includes(b.id)),
-            )
+            .filter((b) => {
+              return !blocks.some((p) => {
+                // Check regular props.children
+                if (
+                  Array.isArray(p.props?.children) &&
+                  p.props.children.includes(b.id)
+                ) {
+                  return true;
+                }
+                // Check direct children array
+                if (Array.isArray(p.children) && p.children.includes(b.id)) {
+                  return true;
+                }
+                // Check nested children array (for columns)
+                if (Array.isArray(p.children)) {
+                  return p.children.some(
+                    (arr) => Array.isArray(arr) && arr.includes(b.id),
+                  );
+                }
+                return false;
+              });
+            })
             .map((block) => renderTree(block))}
         </div>
 
