@@ -103,7 +103,11 @@ export default function EditablePage() {
     // Xử lý thêm block vào column
     const handleAddBlockToColumn = (event) => {
       const { type, parentId, columnIndex } = event.detail;
-      console.log("Adding block to column:", { type, parentId, columnIndex });
+      console.log("✅ Adding block to column:", {
+        type,
+        parentId,
+        columnIndex,
+      });
 
       // Tạo block mới với ID unique hơn
       const newBlock = {
@@ -111,8 +115,6 @@ export default function EditablePage() {
         type,
         props: getDefaultProps(type),
       };
-
-      console.log("Created new block:", newBlock);
 
       // Tìm và cập nhật parent block
       const updatedBlocks = blocks.map((block) => {
