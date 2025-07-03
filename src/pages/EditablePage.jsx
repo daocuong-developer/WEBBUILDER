@@ -59,6 +59,7 @@ export default function EditablePage() {
   const blocks = currentBlocks || [];
 
   const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [selectedColumnInfo, setSelectedColumnInfo] = useState(null); // {parentId, columnIndex}
   const { id } = useParams();
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
   const isContainerSelected =
