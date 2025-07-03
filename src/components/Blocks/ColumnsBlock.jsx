@@ -46,44 +46,20 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
       e.preventDefault();
       const componentData = e.dataTransfer.getData("component");
 
-      if (componentData && onChange) {
+      if (componentData) {
         try {
           const { type } = JSON.parse(componentData);
-          // Tạo block mới
-          const newBlock = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            type,
-            props: {},
-          };
 
-          // Thêm block mới vào blocks array
-          const updatedBlocks = [
-            ...(Array.isArray(blocks) ? blocks : []),
-            newBlock,
-          ];
-
-          // Cập nhật parent block để thêm ID block mới vào cột tương ứng
-          const updatedParentBlock = {
-            ...block,
-            children: (() => {
-              const newChildren = [...(block.children || [])];
-              // Đảm bảo có đủ mảng con cho từng cột
-              while (newChildren.length <= columnIndex) {
-                newChildren.push([]);
-              }
-              // Thêm block vào cột tương ứng
-              if (!Array.isArray(newChildren[columnIndex])) {
-                newChildren[columnIndex] = [];
-              }
-              newChildren[columnIndex] = [
-                ...newChildren[columnIndex],
-                newBlock.id,
-              ];
-              return newChildren;
-            })(),
-          };
-
-          onChange(updatedParentBlock, updatedBlocks);
+          // Dispatch custom event để EditablePage xử lý
+          window.dispatchEvent(
+            new CustomEvent("addBlockToColumn", {
+              detail: {
+                type: type,
+                parentId: block.id,
+                columnIndex: columnIndex,
+              },
+            }),
+          );
         } catch (error) {
           console.error("Error parsing component data:", error);
         }
