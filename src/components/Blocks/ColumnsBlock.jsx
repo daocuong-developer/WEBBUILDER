@@ -53,6 +53,12 @@ const ColumnsBlock = ({
       },
     });
 
+    // Check if this column is selected
+    const isSelected =
+      selectedColumnInfo &&
+      selectedColumnInfo.parentId === block.id &&
+      selectedColumnInfo.columnIndex === columnIndex;
+
     // Xử lý HTML5 drag & drop từ sidebar
     const handleDrop = (e) => {
       e.preventDefault();
