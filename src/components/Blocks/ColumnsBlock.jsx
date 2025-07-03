@@ -124,20 +124,32 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
 
   return (
     <div
-      style={columnsStyle}
+      style={{
+        ...columnsStyle,
+        position: "relative",
+        minHeight: !isPreview ? "100px" : "auto",
+      }}
       onClick={
         onSelect
           ? (e) => {
-              // Chỉ select columns khi click trực tiếp vào container
-              if (e.target === e.currentTarget) {
-                e.stopPropagation();
-                onSelect(block.id);
-              }
+              // Cho phép click vào bất kỳ đâu trong columns để select
+              e.stopPropagation();
+              onSelect(block.id);
             }
           : undefined
       }
-      className={onSelect ? "editor-block-outline" : ""}
+      className={`${onSelect ? "editor-block-outline" : ""} ${!isPreview ? "hover:bg-gray-50 cursor-pointer transition-colors" : ""}`}
     >
+      {/* Header để dễ click chọn columns */}
+      {!isPreview && (
+        <div
+          className="absolute -top-6 left-0 text-xs text-gray-500 bg-white px-2 py-1 rounded border"
+          style={{ zIndex: 10 }}
+        >
+          Columns ({numColumns})
+        </div>
+      )}
+
       {Array.from({ length: numColumns }).map((_, colIndex) => (
         <ColumnDropZone
           key={`col-${colIndex}`}
