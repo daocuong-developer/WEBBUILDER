@@ -171,7 +171,44 @@ export default function EditablePage() {
     };
     let updatedBlocks;
 
-    if (parentId) {
+    // Nếu có column được chọn, thêm vào column đó
+    if (selectedColumnInfo && !parentId) {
+      console.log("🎯 Adding to selected column:", selectedColumnInfo);
+
+      updatedBlocks = blocks.map((block) => {
+        if (block.id === selectedColumnInfo.parentId) {
+          const currentChildren = block.children || block.props?.children || [];
+          const newChildren = [...currentChildren];
+
+          // Đảm bảo có đủ mảng con cho từng cột
+          while (newChildren.length <= selectedColumnInfo.columnIndex) {
+            newChildren.push([]);
+          }
+          // Thêm block vào cột tương ứng
+          if (!Array.isArray(newChildren[selectedColumnInfo.columnIndex])) {
+            newChildren[selectedColumnInfo.columnIndex] = [];
+          }
+          newChildren[selectedColumnInfo.columnIndex] = [
+            ...newChildren[selectedColumnInfo.columnIndex],
+            newBlock.id,
+          ];
+
+          return {
+            ...block,
+            children: newChildren,
+            props: {
+              ...block.props,
+              children: newChildren,
+            },
+          };
+        }
+        return block;
+      });
+
+      updatedBlocks = [...updatedBlocks, newBlock];
+    }
+    // Logic cũ cho container thường
+    else if (parentId) {
       updatedBlocks = blocks.map((b) =>
         b.id === parentId
           ? {
@@ -184,11 +221,20 @@ export default function EditablePage() {
           : b,
       );
       updatedBlocks = [...updatedBlocks, newBlock];
-    } else {
+    }
+    // Thêm vào canvas root
+    else {
       updatedBlocks = [...blocks, newBlock];
     }
+
     recordState(updatedBlocks);
     setSelectedBlockId(newBlock.id);
+
+    // Clear column selection sau khi add
+    if (selectedColumnInfo) {
+      console.log("✅ Added to column, clearing selection");
+      // setSelectedColumnInfo(null); // Có thể giữ lại để add nhiều component
+    }
   };
 
   // UPDATE BLOCK
