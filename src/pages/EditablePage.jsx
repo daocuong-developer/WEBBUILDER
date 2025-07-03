@@ -422,34 +422,116 @@ export default function EditablePage() {
               const activeBlock = blocks.find((b) => b.id === active.id);
 
               if (activeBlock) {
-                // Tìm parent column block
-                const parentBlock = blocks.find((b) => b.id === parentId);
-                if (parentBlock) {
-                  const updatedBlocks = blocks.map((block) => {
-                    if (block.id === parentId) {
-                      const newChildren = [...(block.children || [])];
-                      // Đảm bảo có đủ mảng con cho từng cột
-                      while (newChildren.length <= columnIndex) {
-                        newChildren.push([]);
-                      }
-                      // Thêm block vào cột tương ứng
-                      if (!Array.isArray(newChildren[columnIndex])) {
-                        newChildren[columnIndex] = [];
-                      }
+                console.log(
+                  "🔄 Moving component to column:",
+                  active.id,
+                  "->",
+                  parentId,
+                  columnIndex,
+                );
+
+                // Kiểm tra xem component đang ở đâu
+                const isRootComponent = !blocks.some(
+                  (b) =>
+                    (b.children &&
+                      b.children.flat &&
+                      b.children.flat().includes(active.id)) ||
+                    (b.props?.children &&
+                      b.props.children.includes &&
+                      b.props.children.includes(active.id)),
+                );
+
+                // Tìm parent column block và cập nhật
+                const updatedBlocks = blocks.map((block) => {
+                  if (block.id === parentId) {
+                    // Cập nhật column để thêm component
+                    const currentChildren =
+                      block.children || block.props?.children || [];
+                    const newChildren = [...currentChildren];
+
+                    // Đảm bảo có đủ mảng con cho từng cột
+                    while (newChildren.length <= columnIndex) {
+                      newChildren.push([]);
+                    }
+                    // Thêm block vào cột tương ứng
+                    if (!Array.isArray(newChildren[columnIndex])) {
+                      newChildren[columnIndex] = [];
+                    }
+
+                    // Chỉ thêm nếu chưa có trong cột này
+                    if (!newChildren[columnIndex].includes(active.id)) {
                       newChildren[columnIndex] = [
                         ...newChildren[columnIndex],
                         active.id,
                       ];
+                    }
 
+                    return {
+                      ...block,
+                      children: newChildren,
+                      props: {
+                        ...block.props,
+                        children: newChildren,
+                      },
+                    };
+                  }
+
+                  // Remove từ các container khác nếu có
+                  if (block.children && Array.isArray(block.children)) {
+                    if (
+                      block.children.includes &&
+                      block.children.includes(active.id)
+                    ) {
                       return {
                         ...block,
-                        children: newChildren,
+                        children: block.children.filter(
+                          (id) => id !== active.id,
+                        ),
                       };
                     }
-                    return block;
-                  });
-                  recordState(updatedBlocks);
-                }
+                    // Xử lý children dạng mảng 2 chiều (cho columns)
+                    if (
+                      block.children.some &&
+                      block.children.some(
+                        (arr) => Array.isArray(arr) && arr.includes(active.id),
+                      )
+                    ) {
+                      return {
+                        ...block,
+                        children: block.children.map((arr) =>
+                          Array.isArray(arr)
+                            ? arr.filter((id) => id !== active.id)
+                            : arr,
+                        ),
+                      };
+                    }
+                  }
+
+                  if (
+                    block.props?.children &&
+                    Array.isArray(block.props.children)
+                  ) {
+                    if (
+                      block.props.children.includes &&
+                      block.props.children.includes(active.id)
+                    ) {
+                      return {
+                        ...block,
+                        props: {
+                          ...block.props,
+                          children: block.props.children.filter(
+                            (id) => id !== active.id,
+                          ),
+                        },
+                      };
+                    }
+                  }
+
+                  return block;
+                });
+
+                recordState(updatedBlocks);
+                console.log("✅ Component moved to column successfully");
               }
               return;
             }
