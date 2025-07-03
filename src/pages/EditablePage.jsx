@@ -117,7 +117,10 @@ export default function EditablePage() {
       // Tìm và cập nhật parent block
       const updatedBlocks = blocks.map((block) => {
         if (block.id === parentId) {
-          const newChildren = [...(block.children || [])];
+          // Kiểm tra cả block.children và block.props.children
+          const currentChildren = block.children || block.props?.children || [];
+          const newChildren = [...currentChildren];
+
           // Đảm bảo có đủ mảng con cho từng cột
           while (newChildren.length <= columnIndex) {
             newChildren.push([]);
@@ -133,6 +136,10 @@ export default function EditablePage() {
           return {
             ...block,
             children: newChildren,
+            props: {
+              ...block.props,
+              children: newChildren,
+            },
           };
         }
         return block;
