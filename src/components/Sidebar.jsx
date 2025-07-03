@@ -218,25 +218,14 @@ const Sidebar = ({
                   {isOpen && (
                     <div className="p-2 space-y-2">
                       {cat.components.map((comp) => (
-                        <div
+                        <button
                           key={comp.type}
-                          draggable
-                          onDragStart={(e) => {
-                            console.log("Drag started for:", comp.type);
-                            e.dataTransfer.setData(
-                              "component",
-                              JSON.stringify({ type: comp.type, props: {} }),
-                            );
-                            e.dataTransfer.effectAllowed = "copy";
-                          }}
-                          onDragEnd={(e) => {
-                            console.log("Drag ended for:", comp.type);
-                          }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded bg-gray-50 hover:bg-gray-100 border cursor-move select-none"
+                          onClick={() => onAddComponent(comp.type)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded bg-gray-50 hover:bg-gray-100 border cursor-pointer"
                         >
                           {iconMap[comp.icon] || <Square className="w-4 h-4" />}{" "}
                           {comp.label}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
