@@ -3,7 +3,14 @@ import { useDroppable } from "@dnd-kit/core";
 import getDefaultProps from "@/utils/defaultProps";
 import RenderBlockComponent from "@/components/RenderBlock";
 
-const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
+const ColumnsBlock = ({
+  block,
+  blocks,
+  onSelect,
+  onChange,
+  isPreview,
+  onSelectColumn,
+}) => {
   const props = {
     ...getDefaultProps(block.type),
     ...block.props,
