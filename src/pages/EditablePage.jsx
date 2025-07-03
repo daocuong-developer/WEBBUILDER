@@ -75,7 +75,7 @@ export default function EditablePage() {
     });
   }, [blocks, id, setSaveFn]);
 
-  // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT LẦN
+  // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT L��N
   // Đây là nơi duy nhất chúng ta sẽ chủ đ��ng gọi recordState để thiết lập trạng thái khởi tạo.
   useEffect(() => {
     const saved = localStorage.getItem(`page_data_${id}`);
@@ -133,8 +133,6 @@ export default function EditablePage() {
           }
           newChildren[columnIndex] = [...newChildren[columnIndex], newBlock.id];
 
-          console.log("Updated parent children:", newChildren);
-
           return {
             ...block,
             children: newChildren,
@@ -149,9 +147,9 @@ export default function EditablePage() {
 
       // Thêm block mới vào danh sách
       const finalBlocks = [...updatedBlocks, newBlock];
-      console.log("Final blocks:", finalBlocks);
       recordState(finalBlocks);
       setSelectedBlockId(newBlock.id);
+      console.log("✅ Block added successfully to column", columnIndex);
     };
 
     window.addEventListener("update-blocks", handleUpdateBlocks);
