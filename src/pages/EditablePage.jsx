@@ -357,6 +357,49 @@ export default function EditablePage() {
         collisionDetection={closestCenter}
         onDragEnd={({ active, over }) => {
           if (!over || active.id === over.id) return;
+
+          // Xử lý drop vào column
+          if (over.id.startsWith("column-")) {
+            const overData = over.data.current;
+            if (overData && overData.type === "column") {
+              const { parentId, columnIndex } = overData;
+              const activeBlock = blocks.find((b) => b.id === active.id);
+
+              if (activeBlock) {
+                // Tìm parent column block
+                const parentBlock = blocks.find((b) => b.id === parentId);
+                if (parentBlock) {
+                  const updatedBlocks = blocks.map((block) => {
+                    if (block.id === parentId) {
+                      const newChildren = [...(block.children || [])];
+                      // Đảm bảo có đủ mảng con cho từng cột
+                      while (newChildren.length <= columnIndex) {
+                        newChildren.push([]);
+                      }
+                      // Thêm block vào cột tương ứng
+                      if (!Array.isArray(newChildren[columnIndex])) {
+                        newChildren[columnIndex] = [];
+                      }
+                      newChildren[columnIndex] = [
+                        ...newChildren[columnIndex],
+                        active.id,
+                      ];
+
+                      return {
+                        ...block,
+                        children: newChildren,
+                      };
+                    }
+                    return block;
+                  });
+                  recordState(updatedBlocks);
+                }
+              }
+              return;
+            }
+          }
+
+          // Logic cũ cho reorder
           const activeIndex = blocks.findIndex((b) => b.id === active.id);
           const overIndex = blocks.findIndex((b) => b.id === over.id);
           const isChild = (id) =>
