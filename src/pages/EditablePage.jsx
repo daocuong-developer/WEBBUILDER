@@ -76,7 +76,7 @@ export default function EditablePage() {
   }, [blocks, id, setSaveFn]);
 
   // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT LẦN
-  // Đây là nơi duy nhất chúng ta sẽ chủ động gọi recordState để thiết lập trạng thái khởi tạo.
+  // Đây là nơi duy nhất chúng ta sẽ chủ đ��ng gọi recordState để thiết lập trạng thái khởi tạo.
   useEffect(() => {
     const saved = localStorage.getItem(`page_data_${id}`);
     const initialBlocks = saved ? JSON.parse(saved) : [];
@@ -108,7 +108,7 @@ export default function EditablePage() {
       const newBlock = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type,
-        props: {},
+        props: getDefaultProps(type),
       };
 
       // Tìm và cập nhật parent block
