@@ -84,7 +84,7 @@ export default function EditablePage() {
 
     // So sánh trực tiếp với currentBlocks từ context.
     // Nếu context chưa có gì hoặc khác với dữ liệu đã lưu, thì recordState.
-    // Đây là điểm khởi đầu cho trạng thái trong context.
+    // Đ��y là điểm khởi đầu cho trạng thái trong context.
     // Chỉ chạy một lần trên component mount (do deps là []).
     if (!blocks.length && initialBlocks.length > 0) {
       // Chỉ record nếu blocks rỗng và có dữ liệu lưu
@@ -710,6 +710,24 @@ export default function EditablePage() {
       </DndContext>
 
       <div className="w-80 max-h-[90vh] overflow-y-auto p-2 border-l flex flex-col gap-4 overflow-auto">
+        {selectedColumnInfo && (
+          <div className="bg-green-50 border border-green-200 rounded p-3">
+            <div className="text-green-700 font-semibold text-sm flex items-center gap-2">
+              🎯 Column Selected
+            </div>
+            <div className="text-green-600 text-xs mt-1">
+              Column {selectedColumnInfo.columnIndex + 1} ready for new
+              components
+            </div>
+            <button
+              onClick={() => setSelectedColumnInfo(null)}
+              className="text-xs text-green-600 hover:text-green-800 mt-2 underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
         <div className="min-h-[250px] max-h-64 overflow-auto border rounded p-2">
           <h2 className="text-lg font-semibold mb-2">Page Structure</h2>
           {blocks
