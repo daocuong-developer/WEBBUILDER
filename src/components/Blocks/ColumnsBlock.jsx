@@ -41,6 +41,59 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
       },
     });
 
+    // Xử lý HTML5 drag & drop từ sidebar
+    const handleDrop = (e) => {
+      e.preventDefault();
+      const componentData = e.dataTransfer.getData("component");
+
+      if (componentData && onChange) {
+        try {
+          const { type } = JSON.parse(componentData);
+          // Tạo block mới
+          const newBlock = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            type,
+            props: {},
+          };
+
+          // Thêm block mới vào blocks array
+          const updatedBlocks = [
+            ...(Array.isArray(blocks) ? blocks : []),
+            newBlock,
+          ];
+
+          // Cập nhật parent block để thêm ID block mới vào cột tương ứng
+          const updatedParentBlock = {
+            ...block,
+            children: (() => {
+              const newChildren = [...(block.children || [])];
+              // Đảm bảo có đủ mảng con cho từng cột
+              while (newChildren.length <= columnIndex) {
+                newChildren.push([]);
+              }
+              // Thêm block vào cột tương ứng
+              if (!Array.isArray(newChildren[columnIndex])) {
+                newChildren[columnIndex] = [];
+              }
+              newChildren[columnIndex] = [
+                ...newChildren[columnIndex],
+                newBlock.id,
+              ];
+              return newChildren;
+            })(),
+          };
+
+          onChange(updatedParentBlock, updatedBlocks);
+        } catch (error) {
+          console.error("Error parsing component data:", error);
+        }
+      }
+    };
+
+    const handleDragOver = (e) => {
+      e.preventDefault(); // Cho phép drop
+    };
+
     return (
       <div
         ref={setNodeRef}
@@ -66,6 +119,8 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
             // Có thể thêm logic để chọn cột cụ thể nếu cần
           }
         }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
       >
         {columnChildren && columnChildren.length > 0
           ? columnChildren.map((childId) => {
