@@ -144,7 +144,10 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
       style={{
         ...columnsStyle,
         position: "relative",
-        minHeight: !isPreview ? "100px" : "auto",
+        minHeight: !isPreview ? "120px" : "auto",
+        border: !isPreview ? "2px solid transparent" : "none",
+        borderRadius: "8px",
+        padding: "8px",
       }}
       onClick={
         onSelect
@@ -155,7 +158,7 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
             }
           : undefined
       }
-      className={`${onSelect ? "editor-block-outline" : ""} ${!isPreview ? "hover:bg-gray-50 cursor-pointer transition-colors" : ""}`}
+      className={`${onSelect ? "editor-block-outline" : ""} ${!isPreview ? "hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all" : ""}`}
     >
       {/* Header để dễ click chọn columns */}
       {!isPreview && (
