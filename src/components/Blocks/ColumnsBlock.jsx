@@ -21,8 +21,12 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     boxSizing: "border-box",
   };
 
-  // Khởi tạo children cho từng cột nếu chưa có
-  const children = Array.isArray(block.children) ? block.children : [];
+  // Khởi tạo children cho từng cột nếu chưa có - kiểm tra cả hai vị trí có thể
+  const children = Array.isArray(block.children)
+    ? block.children
+    : Array.isArray(block.props?.children)
+      ? block.props.children
+      : [];
 
   // Debug logging
   console.log("ColumnsBlock children:", children, "Block:", block);
