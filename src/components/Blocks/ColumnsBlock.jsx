@@ -102,11 +102,13 @@ const ColumnsBlock = ({
         ref={setNodeRef}
         key={columnKey}
         className={`min-h-[120px] p-3 rounded transition-all duration-200 ${
-          isOver
-            ? "bg-blue-50 border-2 border-blue-400 border-dashed shadow-md"
-            : !isPreview
-              ? "border-2 border-dashed border-gray-300 hover:border-gray-500 hover:bg-gray-50"
-              : "border border-gray-200"
+          isSelected
+            ? "bg-green-50 border-2 border-green-400 border-solid shadow-md"
+            : isOver
+              ? "bg-blue-50 border-2 border-blue-400 border-dashed shadow-md"
+              : !isPreview
+                ? "border-2 border-dashed border-gray-300 hover:border-gray-500 hover:bg-gray-50"
+                : "border border-gray-200"
         }`}
         style={{
           display: "flex",
