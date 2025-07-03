@@ -100,9 +100,52 @@ export default function EditablePage() {
       }
     };
 
+    // Xử lý thêm block vào column
+    const handleAddBlockToColumn = (event) => {
+      const { type, parentId, columnIndex } = event.detail;
+
+      // Tạo block mới
+      const newBlock = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        type,
+        props: {},
+      };
+
+      // Tìm và cập nhật parent block
+      const updatedBlocks = blocks.map((block) => {
+        if (block.id === parentId) {
+          const newChildren = [...(block.children || [])];
+          // Đảm bảo có đủ mảng con cho từng cột
+          while (newChildren.length <= columnIndex) {
+            newChildren.push([]);
+          }
+          // Thêm block vào cột tương ứng
+          if (!Array.isArray(newChildren[columnIndex])) {
+            newChildren[columnIndex] = [];
+          }
+          newChildren[columnIndex] = [...newChildren[columnIndex], newBlock.id];
+
+          return {
+            ...block,
+            children: newChildren,
+          };
+        }
+        return block;
+      });
+
+      // Thêm block mới vào danh sách
+      const finalBlocks = [...updatedBlocks, newBlock];
+      recordState(finalBlocks);
+      setSelectedBlockId(newBlock.id);
+    };
+
     window.addEventListener("update-blocks", handleUpdateBlocks);
-    return () =>
+    window.addEventListener("addBlockToColumn", handleAddBlockToColumn);
+
+    return () => {
       window.removeEventListener("update-blocks", handleUpdateBlocks);
+      window.removeEventListener("addBlockToColumn", handleAddBlockToColumn);
+    };
   }, [id, recordState, selectedBlockId, blocks.length]); // Thêm blocks.length vào dependencies
 
   // ADD BLOCK
