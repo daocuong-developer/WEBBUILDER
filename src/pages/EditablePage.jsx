@@ -641,6 +641,8 @@ export default function EditablePage() {
               // Click vào background để deselect
               if (e.target === e.currentTarget) {
                 setSelectedBlockId(null);
+                setSelectedColumnInfo(null);
+                console.log("🔄 Cleared column selection");
               }
             }}
           >
