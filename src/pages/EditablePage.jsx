@@ -611,26 +611,32 @@ export default function EditablePage() {
         <SortableContext
           items={blocks.filter((b) => {
             // Exclude blocks that are children of other blocks
-            return !blocks.some((p) => {
+            const isChild = blocks.some((p) => {
               // Check regular props.children
               if (
-                p.props?.children?.includes &&
+                Array.isArray(p.props?.children) &&
                 p.props.children.includes(b.id)
               ) {
                 return true;
               }
               // Check direct children array
-              if (p.children?.includes && p.children.includes(b.id)) {
+              if (Array.isArray(p.children) && p.children.includes(b.id)) {
                 return true;
               }
               // Check nested children array (for columns)
-              if (p.children && Array.isArray(p.children)) {
+              if (Array.isArray(p.children)) {
                 return p.children.some(
                   (arr) => Array.isArray(arr) && arr.includes(b.id),
                 );
               }
               return false;
             });
+
+            if (isChild) {
+              console.log(`🔍 Filtering out ${b.id} (${b.type}) - is child`);
+            }
+
+            return !isChild;
           })}
           strategy={verticalListSortingStrategy}
         >
