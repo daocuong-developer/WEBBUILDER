@@ -174,11 +174,14 @@ export default function EditablePage() {
     // Nếu có column được chọn, thêm vào column đó
     if (selectedColumnInfo && !parentId) {
       console.log("🎯 Adding to selected column:", selectedColumnInfo);
+      console.log("📦 New block:", newBlock);
 
       updatedBlocks = blocks.map((block) => {
         if (block.id === selectedColumnInfo.parentId) {
           const currentChildren = block.children || block.props?.children || [];
           const newChildren = [...currentChildren];
+
+          console.log("📋 Current children structure:", currentChildren);
 
           // Đảm bảo có đủ mảng con cho từng cột
           while (newChildren.length <= selectedColumnInfo.columnIndex) {
@@ -192,6 +195,8 @@ export default function EditablePage() {
             ...newChildren[selectedColumnInfo.columnIndex],
             newBlock.id,
           ];
+
+          console.log("✅ Updated children structure:", newChildren);
 
           return {
             ...block,
