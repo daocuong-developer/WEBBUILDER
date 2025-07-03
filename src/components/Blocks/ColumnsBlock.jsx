@@ -44,7 +44,10 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     // Xử lý HTML5 drag & drop từ sidebar
     const handleDrop = (e) => {
       e.preventDefault();
+      e.stopPropagation();
+
       const componentData = e.dataTransfer.getData("component");
+      console.log("Drop detected:", componentData, "Column:", columnIndex);
 
       if (componentData) {
         try {
@@ -68,35 +71,49 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
 
     const handleDragOver = (e) => {
       e.preventDefault(); // Cho phép drop
+      e.stopPropagation();
+    };
+
+    const handleDragEnter = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     return (
       <div
         ref={setNodeRef}
         key={columnKey}
-        className={`min-h-[80px] p-2 rounded transition-colors ${
+        className={`min-h-[120px] p-3 rounded transition-all duration-200 ${
           isOver
-            ? "bg-blue-50 border-2 border-blue-300 border-dashed"
+            ? "bg-blue-50 border-2 border-blue-400 border-dashed shadow-md"
             : !isPreview
-              ? "border border-dashed border-gray-200 hover:border-gray-400"
-              : ""
+              ? "border-2 border-dashed border-gray-300 hover:border-gray-500 hover:bg-gray-50"
+              : "border border-gray-200"
         }`}
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "stretch",
-          justifyContent: "flex-start",
+          justifyContent:
+            columnChildren && columnChildren.length > 0
+              ? "flex-start"
+              : "center",
           boxSizing: "border-box",
+          position: "relative",
         }}
         onClick={(e) => {
-          // Cho phép click vào cột để chọn cột đó
-          if (e.target === e.currentTarget && onSelect) {
+          // Ngăn không cho bubble up để parent columns vẫn có thể được chọn
+          if (columnChildren && columnChildren.length === 0) {
+            // Chỉ select parent nếu column rỗng
             e.stopPropagation();
-            // Có thể thêm logic để chọn cột cụ thể nếu cần
+            if (onSelect) {
+              onSelect(block.id);
+            }
           }
         }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
       >
         {columnChildren && columnChildren.length > 0
           ? columnChildren.map((childId) => {
