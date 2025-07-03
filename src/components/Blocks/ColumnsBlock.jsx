@@ -28,15 +28,10 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
       ? block.props.children
       : [];
 
-  // Debug logging
-  console.log("ColumnsBlock children:", children, "Block:", block);
-
   // Đảm bảo có đủ mảng con cho từng cột
   while (children.length < numColumns) {
     children.push([]);
   }
-
-  console.log("After padding children:", children);
 
   // Component cho từng cột với khả năng drop
   const ColumnDropZone = ({ columnIndex, columnChildren, columnKey }) => {
