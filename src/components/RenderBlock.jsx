@@ -43,6 +43,8 @@ export default function RenderBlockComponent({
     onSelect: onSelect,
     onChange,
     isPreview,
+    onSelectColumn,
+    selectedColumnInfo,
   };
 
   switch (block.type) {
