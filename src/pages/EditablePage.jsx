@@ -584,9 +584,26 @@ export default function EditablePage() {
             }}
           >
             {blocks.map((block) => {
-              const isChild = blocks.some((b) =>
-                b.props.children?.includes(block.id),
-              );
+              const isChild = blocks.some((b) => {
+                // Check regular props.children
+                if (
+                  b.props?.children?.includes &&
+                  b.props.children.includes(block.id)
+                ) {
+                  return true;
+                }
+                // Check direct children array
+                if (b.children?.includes && b.children.includes(block.id)) {
+                  return true;
+                }
+                // Check nested children array (for columns)
+                if (b.children && Array.isArray(b.children)) {
+                  return b.children.some(
+                    (arr) => Array.isArray(arr) && arr.includes(block.id),
+                  );
+                }
+                return false;
+              });
               if (isChild) return null;
               return (
                 <SortableItem key={block.id} block={block}>
