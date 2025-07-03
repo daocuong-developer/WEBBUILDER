@@ -10,6 +10,7 @@ const ColumnsBlock = ({
   onChange,
   isPreview,
   onSelectColumn,
+  selectedColumnInfo,
 }) => {
   const props = {
     ...getDefaultProps(block.type),
