@@ -30,6 +30,8 @@ export default function RenderBlockComponent({
   onSelect,
   onChange,
   isPreview = false,
+  onSelectColumn,
+  selectedColumnInfo,
 }) {
   if (!block || typeof block !== "object" || !block.type) {
     return null;
