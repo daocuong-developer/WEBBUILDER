@@ -126,7 +126,7 @@ const ColumnsBlock = ({
           // Select column for adding components
           if (onSelectColumn) {
             onSelectColumn(block.id, columnIndex);
-            console.log("🎯 Column selected:", block.id, columnIndex);
+            console.log("���� Column selected:", block.id, columnIndex);
           }
           // Also select the parent block
           if (onSelect) {
@@ -141,13 +141,21 @@ const ColumnsBlock = ({
           ? columnChildren.map((childId) => {
               const childBlock = blocks?.find((b) => b.id === childId);
               return childBlock ? (
-                <div key={childBlock.id} className="mb-2">
+                <div
+                  key={childBlock.id}
+                  className="mb-2"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Ngăn column selection khi click vào child
+                  }}
+                >
                   <RenderBlockComponent
                     block={childBlock}
                     blocks={blocks}
                     onSelect={onSelect}
                     onChange={onChange}
                     isPreview={isPreview}
+                    onSelectColumn={onSelectColumn}
+                    selectedColumnInfo={selectedColumnInfo}
                   />
                 </div>
               ) : null;
