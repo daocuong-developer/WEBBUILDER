@@ -548,9 +548,29 @@ export default function EditablePage() {
         }}
       >
         <SortableContext
-          items={blocks.filter(
-            (b) => !blocks.some((p) => p.props.children?.includes(b.id)),
-          )}
+          items={blocks.filter((b) => {
+            // Exclude blocks that are children of other blocks
+            return !blocks.some((p) => {
+              // Check regular props.children
+              if (
+                p.props?.children?.includes &&
+                p.props.children.includes(b.id)
+              ) {
+                return true;
+              }
+              // Check direct children array
+              if (p.children?.includes && p.children.includes(b.id)) {
+                return true;
+              }
+              // Check nested children array (for columns)
+              if (p.children && Array.isArray(p.children)) {
+                return p.children.some(
+                  (arr) => Array.isArray(arr) && arr.includes(b.id),
+                );
+              }
+              return false;
+            });
+          })}
           strategy={verticalListSortingStrategy}
         >
           <div
