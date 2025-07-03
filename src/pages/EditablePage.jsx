@@ -105,9 +105,9 @@ export default function EditablePage() {
       const { type, parentId, columnIndex } = event.detail;
       console.log("Adding block to column:", { type, parentId, columnIndex });
 
-      // Tạo block mới
+      // Tạo block mới với ID unique hơn
       const newBlock = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type,
         props: getDefaultProps(type),
       };
