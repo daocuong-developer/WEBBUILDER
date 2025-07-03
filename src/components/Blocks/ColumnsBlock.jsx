@@ -113,13 +113,15 @@ const ColumnsBlock = ({
           position: "relative",
         }}
         onClick={(e) => {
-          // Ngăn không cho bubble up để parent columns vẫn có thể được chọn
-          if (columnChildren && columnChildren.length === 0) {
-            // Chỉ select parent nếu column rỗng
-            e.stopPropagation();
-            if (onSelect) {
-              onSelect(block.id);
-            }
+          e.stopPropagation();
+          // Select column for adding components
+          if (onSelectColumn) {
+            onSelectColumn(block.id, columnIndex);
+            console.log("🎯 Column selected:", block.id, columnIndex);
+          }
+          // Also select the parent block
+          if (onSelect) {
+            onSelect(block.id);
           }
         }}
         onDrop={handleDrop}
