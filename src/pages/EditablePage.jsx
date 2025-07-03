@@ -689,6 +689,15 @@ export default function EditablePage() {
                       blocks={blocks}
                       onSelect={(id) => setSelectedBlockId(id)}
                       onChange={updateBlock}
+                      onSelectColumn={(parentId, columnIndex) => {
+                        setSelectedColumnInfo({ parentId, columnIndex });
+                        console.log(
+                          "🎯 Column selected:",
+                          parentId,
+                          columnIndex,
+                        );
+                      }}
+                      selectedColumnInfo={selectedColumnInfo}
                     />
                   </div>
                 </SortableItem>
