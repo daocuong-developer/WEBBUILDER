@@ -157,7 +157,7 @@ export default function EditablePage() {
   // ADD BLOCK
   const addBlock = (type, parentId = null) => {
     const newBlock = {
-      id: Date.now().toString(),
+      id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
       props: getDefaultProps(type),
     };
