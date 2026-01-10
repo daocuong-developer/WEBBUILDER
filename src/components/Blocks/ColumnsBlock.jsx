@@ -1,9 +1,17 @@
-// src/components/Blocks/ColumnsBlock.jsx
 import React from "react";
+import { useDroppable } from "@dnd-kit/core";
 import getDefaultProps from "@/utils/defaultProps";
 import RenderBlockComponent from "@/components/RenderBlock";
 
-const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
+const ColumnsBlock = ({
+  block,
+  blocks,
+  onSelect,
+  onChange,
+  isPreview,
+  onSelectColumn,
+  selectedColumnInfo,
+}) => {
   const props = {
     ...getDefaultProps(block.type),
     ...block.props,
@@ -16,72 +24,202 @@ const ColumnsBlock = ({ block, blocks, onSelect, onChange, isPreview }) => {
     display: "grid",
     gridTemplateColumns: `repeat(${numColumns}, 1fr)`,
     gap: `${gap}px`,
-    padding: props.padding || "0", // Thêm padding cho columns block
-    margin: props.margin || "0", // Thêm margin cho columns block
+    padding: props.padding || "0",
+    margin: props.margin || "0",
     boxSizing: "border-box",
   };
 
-  const children = Array.isArray(block.children) ? block.children : [];
+  // Khởi tạo children cho từng cột nếu chưa có - kiểm tra cả hai vị trí có thể
+  const children = Array.isArray(block.children)
+    ? block.children
+    : Array.isArray(block.props?.children)
+      ? block.props.children
+      : [];
 
-  // Tạo mảng các cột rỗng nếu số lượng con ít hơn số cột
-  const columnChildren = Array.from({ length: numColumns }).map(
-    (_, colIndex) => {
-      // Trong trường hợp này, children của ColumnsBlock là ID của các container con (columns)
-      // Mỗi container con sẽ chứa các block thực tế
-      const columnId = children[colIndex];
-      const columnBlock = blocks?.find((b) => b.id === columnId);
+  // Đảm bảo có đủ mảng con cho từng cột
+  while (children.length < numColumns) {
+    children.push([]);
+  }
 
-      return (
-        <div
-          key={columnId || `empty-col-${colIndex}`} // Key duy nhất cho mỗi cột
-          style={{
-            border: onSelect && !columnBlock ? "1px dashed #ccc" : "none", // Đường viền cho cột rỗng
-            minHeight: onSelect && !columnBlock ? "80px" : "auto", // Chiều cao tối thiểu cho cột rỗng
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "stretch",
-            justifyContent: "flex-start",
-            padding: onSelect && !columnBlock ? "10px" : "0",
-            boxSizing: "border-box",
-          }}
-        >
-          {columnBlock ? (
-            <RenderBlockComponent
-              block={columnBlock}
-              blocks={blocks}
-              onSelect={onSelect}
-              onChange={onChange}
-              isPreview={isPreview}
-            />
-          ) : (
-            !isPreview && (
-              <div className="text-sm text-gray-400 italic text-center p-2">
-                (Drop elements here)
+  // Component cho từng cột với khả năng drop
+  const ColumnDropZone = ({ columnIndex, columnChildren, columnKey }) => {
+    const { isOver, setNodeRef } = useDroppable({
+      id: `column-${block.id}-${columnIndex}`,
+      data: {
+        type: "column",
+        parentId: block.id,
+        columnIndex: columnIndex,
+        accepts: ["block"], // Chấp nhận tất cả các loại block
+      },
+    });
+
+    // Check if this column is selected
+    const isSelected =
+      selectedColumnInfo &&
+      selectedColumnInfo.parentId === block.id &&
+      selectedColumnInfo.columnIndex === columnIndex;
+
+    // Xử lý HTML5 drag & drop từ sidebar
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const componentData = e.dataTransfer.getData("component");
+      console.log("Drop detected:", componentData, "Column:", columnIndex);
+
+      if (componentData) {
+        try {
+          const { type } = JSON.parse(componentData);
+
+          // Dispatch custom event để EditablePage xử lý
+          window.dispatchEvent(
+            new CustomEvent("addBlockToColumn", {
+              detail: {
+                type: type,
+                parentId: block.id,
+                columnIndex: columnIndex,
+              },
+            }),
+          );
+        } catch (error) {
+          console.error("Error parsing component data:", error);
+        }
+      }
+    };
+
+    const handleDragOver = (e) => {
+      e.preventDefault(); // Cho phép drop
+      e.stopPropagation();
+    };
+
+    const handleDragEnter = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        key={columnKey}
+        className={`min-h-[120px] p-3 rounded transition-all duration-200 ${
+          isSelected
+            ? "bg-green-50 border-2 border-green-400 border-solid shadow-md"
+            : isOver
+              ? "bg-blue-50 border-2 border-blue-400 border-dashed shadow-md"
+              : !isPreview
+                ? "border-2 border-dashed border-gray-300 hover:border-gray-500 hover:bg-gray-50"
+                : "border border-gray-200"
+        }`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          justifyContent:
+            columnChildren && columnChildren.length > 0
+              ? "flex-start"
+              : "center",
+          boxSizing: "border-box",
+          position: "relative",
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Select column for adding components
+          if (onSelectColumn) {
+            onSelectColumn(block.id, columnIndex);
+            console.log("���� Column selected:", block.id, columnIndex);
+          }
+          // Also select the parent block
+          if (onSelect) {
+            onSelect(block.id);
+          }
+        }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+      >
+        {columnChildren && columnChildren.length > 0
+          ? columnChildren.map((childId) => {
+              const childBlock = blocks?.find((b) => b.id === childId);
+              return childBlock ? (
+                <div
+                  key={childBlock.id}
+                  className="mb-2"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Ngăn column selection khi click vào child
+                  }}
+                >
+                  <RenderBlockComponent
+                    block={childBlock}
+                    blocks={blocks}
+                    onSelect={onSelect}
+                    onChange={onChange}
+                    isPreview={isPreview}
+                    onSelectColumn={onSelectColumn}
+                    selectedColumnInfo={selectedColumnInfo}
+                  />
+                </div>
+              ) : null;
+            })
+          : !isPreview && (
+              <div className="text-sm text-gray-400 italic text-center p-4 flex-1 flex items-center justify-center flex-col gap-2">
+                {isSelected ? (
+                  <div className="text-green-600 font-semibold">
+                    ✓ Selected Column {columnIndex + 1}
+                    <div className="text-xs text-green-500">
+                      Click components to add here
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    Click to select column
+                    <div className="text-xs">Then click components to add</div>
+                  </div>
+                )}
               </div>
-            )
-          )}
-        </div>
-      );
-    },
-  );
+            )}
+      </div>
+    );
+  };
 
   return (
     <div
-      style={columnsStyle}
+      style={{
+        ...columnsStyle,
+        position: "relative",
+        minHeight: !isPreview ? "120px" : "auto",
+        border: !isPreview ? "2px solid transparent" : "none",
+        borderRadius: "8px",
+        padding: "8px",
+      }}
       onClick={
         onSelect
           ? (e) => {
-              // Chỉ select columns khi click trực tiếp vào nó, không phải vào children
-              if (e.target === e.currentTarget) {
-                e.stopPropagation();
-                onSelect(block.id);
-              }
+              // Cho phép click vào bất kỳ đâu trong columns để select
+              e.stopPropagation();
+              onSelect(block.id);
             }
           : undefined
       }
-      className={onSelect ? "editor-block-outline" : ""}
+      className={`${onSelect ? "editor-block-outline" : ""} ${!isPreview ? "hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all" : ""}`}
     >
-      {columnChildren}
+      {/* Header để dễ click chọn columns */}
+      {!isPreview && (
+        <div
+          className="absolute -top-6 left-0 text-xs text-gray-500 bg-white px-2 py-1 rounded border"
+          style={{ zIndex: 10 }}
+        >
+          Columns ({numColumns})
+        </div>
+      )}
+
+      {Array.from({ length: numColumns }).map((_, colIndex) => (
+        <ColumnDropZone
+          key={`col-${colIndex}`}
+          columnIndex={colIndex}
+          columnChildren={children[colIndex]}
+          columnKey={`col-${colIndex}`}
+        />
+      ))}
     </div>
   );
 };

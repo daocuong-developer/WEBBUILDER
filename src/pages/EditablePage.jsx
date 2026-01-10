@@ -59,6 +59,7 @@ export default function EditablePage() {
   const blocks = currentBlocks || [];
 
   const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [selectedColumnInfo, setSelectedColumnInfo] = useState(null); // {parentId, columnIndex}
   const { id } = useParams();
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
   const isContainerSelected =
@@ -75,15 +76,15 @@ export default function EditablePage() {
     });
   }, [blocks, id, setSaveFn]);
 
-  // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT LẦN
-  // Đây là nơi duy nhất chúng ta sẽ chủ động gọi recordState để thiết lập trạng thái khởi tạo.
+  // Effect để tải dữ liệu ban đầu từ localStorage và đẩy vào UndoContext CHỈ MỘT L��N
+  // Đây là nơi duy nhất chúng ta sẽ chủ đ��ng gọi recordState để thiết lập trạng thái khởi tạo.
   useEffect(() => {
     const saved = localStorage.getItem(`page_data_${id}`);
     const initialBlocks = saved ? JSON.parse(saved) : [];
 
     // So sánh trực tiếp với currentBlocks từ context.
     // Nếu context chưa có gì hoặc khác với dữ liệu đã lưu, thì recordState.
-    // Đây là điểm khởi đầu cho trạng thái trong context.
+    // Đ����y là điểm khởi đầu cho trạng thái trong context.
     // Chỉ chạy một lần trên component mount (do deps là []).
     if (!blocks.length && initialBlocks.length > 0) {
       // Chỉ record nếu blocks rỗng và có dữ liệu lưu
@@ -100,21 +101,119 @@ export default function EditablePage() {
       }
     };
 
+    // Xử lý thêm block vào column
+    const handleAddBlockToColumn = (event) => {
+      const { type, parentId, columnIndex } = event.detail;
+      console.log("✅ Adding block to column:", {
+        type,
+        parentId,
+        columnIndex,
+      });
+
+      // Tạo block mới với ID unique hơn
+      const newBlock = {
+        id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type,
+        props: getDefaultProps(type),
+      };
+
+      // Tìm và cập nhật parent block
+      const updatedBlocks = blocks.map((block) => {
+        if (block.id === parentId) {
+          // Kiểm tra cả block.children và block.props.children
+          const currentChildren = block.children || block.props?.children || [];
+          const newChildren = [...currentChildren];
+
+          // Đảm bảo có đủ mảng con cho từng cột
+          while (newChildren.length <= columnIndex) {
+            newChildren.push([]);
+          }
+          // Thêm block vào cột tương ứng
+          if (!Array.isArray(newChildren[columnIndex])) {
+            newChildren[columnIndex] = [];
+          }
+          newChildren[columnIndex] = [...newChildren[columnIndex], newBlock.id];
+
+          return {
+            ...block,
+            children: newChildren,
+            props: {
+              ...block.props,
+              children: newChildren,
+            },
+          };
+        }
+        return block;
+      });
+
+      // Thêm block mới vào danh sách
+      const finalBlocks = [...updatedBlocks, newBlock];
+      recordState(finalBlocks);
+      setSelectedBlockId(newBlock.id);
+      console.log("✅ Block added successfully to column", columnIndex);
+    };
+
     window.addEventListener("update-blocks", handleUpdateBlocks);
-    return () =>
+    window.addEventListener("addBlockToColumn", handleAddBlockToColumn);
+
+    return () => {
       window.removeEventListener("update-blocks", handleUpdateBlocks);
+      window.removeEventListener("addBlockToColumn", handleAddBlockToColumn);
+    };
   }, [id, recordState, selectedBlockId, blocks.length]); // Thêm blocks.length vào dependencies
 
   // ADD BLOCK
   const addBlock = (type, parentId = null) => {
     const newBlock = {
-      id: Date.now().toString(),
+      id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
       props: getDefaultProps(type),
     };
     let updatedBlocks;
 
-    if (parentId) {
+    // Nếu có column được chọn, thêm vào column đó
+    if (selectedColumnInfo && !parentId) {
+      console.log("🎯 Adding to selected column:", selectedColumnInfo);
+      console.log("📦 New block:", newBlock);
+
+      updatedBlocks = blocks.map((block) => {
+        if (block.id === selectedColumnInfo.parentId) {
+          const currentChildren = block.children || block.props?.children || [];
+          const newChildren = [...currentChildren];
+
+          console.log("📋 Current children structure:", currentChildren);
+
+          // Đảm bảo có đủ mảng con cho từng cột
+          while (newChildren.length <= selectedColumnInfo.columnIndex) {
+            newChildren.push([]);
+          }
+          // Thêm block vào cột tương ứng
+          if (!Array.isArray(newChildren[selectedColumnInfo.columnIndex])) {
+            newChildren[selectedColumnInfo.columnIndex] = [];
+          }
+          newChildren[selectedColumnInfo.columnIndex] = [
+            ...newChildren[selectedColumnInfo.columnIndex],
+            newBlock.id,
+          ];
+
+          console.log("✅ Updated children structure:", newChildren);
+
+          return {
+            ...block,
+            children: newChildren,
+            props: {
+              ...block.props,
+              children: newChildren,
+            },
+          };
+        }
+        return block;
+      });
+
+      updatedBlocks = [...updatedBlocks, newBlock];
+    }
+    // Logic cũ cho container thường
+    else if (parentId) {
       updatedBlocks = blocks.map((b) =>
         b.id === parentId
           ? {
@@ -127,11 +226,20 @@ export default function EditablePage() {
           : b,
       );
       updatedBlocks = [...updatedBlocks, newBlock];
-    } else {
+    }
+    // Thêm vào canvas root
+    else {
       updatedBlocks = [...blocks, newBlock];
     }
+
     recordState(updatedBlocks);
     setSelectedBlockId(newBlock.id);
+
+    // Clear column selection sau khi add
+    if (selectedColumnInfo) {
+      console.log("✅ Added to column, clearing selection");
+      // setSelectedColumnInfo(null); // Có thể giữ lại để add nhiều component
+    }
   };
 
   // UPDATE BLOCK
@@ -288,9 +396,23 @@ export default function EditablePage() {
   const renderTree = (block, level = 0) => {
     if (!block) return null;
     const isExpanded = expandedBlocks[block.id] ?? true;
-    const children = block.props.children
-      ?.map((id) => blocks.find((b) => b.id === id))
-      .filter(Boolean);
+
+    // Handle different children structures
+    let children = [];
+
+    if (block.type === "columns") {
+      // For columns, flatten the 2D array structure
+      const columnChildren = block.children || block.props?.children || [];
+      children = columnChildren
+        .flat()
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter(Boolean);
+    } else {
+      // For regular containers
+      children = (block.props?.children || block.children || [])
+        .map((id) => blocks.find((b) => b.id === id))
+        .filter(Boolean);
+    }
     const isContainer = block.type === "container";
 
     return (
@@ -357,6 +479,131 @@ export default function EditablePage() {
         collisionDetection={closestCenter}
         onDragEnd={({ active, over }) => {
           if (!over || active.id === over.id) return;
+
+          // Xử lý drop vào column
+          if (over.id.startsWith("column-")) {
+            const overData = over.data.current;
+            if (overData && overData.type === "column") {
+              const { parentId, columnIndex } = overData;
+              const activeBlock = blocks.find((b) => b.id === active.id);
+
+              if (activeBlock) {
+                console.log(
+                  "🔄 Moving component to column:",
+                  active.id,
+                  "->",
+                  parentId,
+                  columnIndex,
+                );
+
+                // Kiểm tra xem component đang ở đâu
+                const isRootComponent = !blocks.some(
+                  (b) =>
+                    (b.children &&
+                      b.children.flat &&
+                      b.children.flat().includes(active.id)) ||
+                    (b.props?.children &&
+                      b.props.children.includes &&
+                      b.props.children.includes(active.id)),
+                );
+
+                // Tìm parent column block và cập nhật
+                const updatedBlocks = blocks.map((block) => {
+                  if (block.id === parentId) {
+                    // Cập nhật column để thêm component
+                    const currentChildren =
+                      block.children || block.props?.children || [];
+                    const newChildren = [...currentChildren];
+
+                    // Đảm bảo có đủ mảng con cho từng cột
+                    while (newChildren.length <= columnIndex) {
+                      newChildren.push([]);
+                    }
+                    // Thêm block vào cột tương ứng
+                    if (!Array.isArray(newChildren[columnIndex])) {
+                      newChildren[columnIndex] = [];
+                    }
+
+                    // Chỉ thêm nếu chưa có trong cột này
+                    if (!newChildren[columnIndex].includes(active.id)) {
+                      newChildren[columnIndex] = [
+                        ...newChildren[columnIndex],
+                        active.id,
+                      ];
+                    }
+
+                    return {
+                      ...block,
+                      children: newChildren,
+                      props: {
+                        ...block.props,
+                        children: newChildren,
+                      },
+                    };
+                  }
+
+                  // Remove từ các container khác nếu có
+                  if (block.children && Array.isArray(block.children)) {
+                    if (
+                      block.children.includes &&
+                      block.children.includes(active.id)
+                    ) {
+                      return {
+                        ...block,
+                        children: block.children.filter(
+                          (id) => id !== active.id,
+                        ),
+                      };
+                    }
+                    // Xử lý children dạng mảng 2 chiều (cho columns)
+                    if (
+                      block.children.some &&
+                      block.children.some(
+                        (arr) => Array.isArray(arr) && arr.includes(active.id),
+                      )
+                    ) {
+                      return {
+                        ...block,
+                        children: block.children.map((arr) =>
+                          Array.isArray(arr)
+                            ? arr.filter((id) => id !== active.id)
+                            : arr,
+                        ),
+                      };
+                    }
+                  }
+
+                  if (
+                    block.props?.children &&
+                    Array.isArray(block.props.children)
+                  ) {
+                    if (
+                      block.props.children.includes &&
+                      block.props.children.includes(active.id)
+                    ) {
+                      return {
+                        ...block,
+                        props: {
+                          ...block.props,
+                          children: block.props.children.filter(
+                            (id) => id !== active.id,
+                          ),
+                        },
+                      };
+                    }
+                  }
+
+                  return block;
+                });
+
+                recordState(updatedBlocks);
+                console.log("✅ Component moved to column successfully");
+              }
+              return;
+            }
+          }
+
+          // Logic cũ cho reorder
           const activeIndex = blocks.findIndex((b) => b.id === active.id);
           const overIndex = blocks.findIndex((b) => b.id === over.id);
           const isChild = (id) =>
@@ -367,9 +614,35 @@ export default function EditablePage() {
         }}
       >
         <SortableContext
-          items={blocks.filter(
-            (b) => !blocks.some((p) => p.props.children?.includes(b.id)),
-          )}
+          items={blocks.filter((b) => {
+            // Exclude blocks that are children of other blocks
+            const isChild = blocks.some((p) => {
+              // Check regular props.children
+              if (
+                Array.isArray(p.props?.children) &&
+                p.props.children.includes(b.id)
+              ) {
+                return true;
+              }
+              // Check direct children array
+              if (Array.isArray(p.children) && p.children.includes(b.id)) {
+                return true;
+              }
+              // Check nested children array (for columns)
+              if (Array.isArray(p.children)) {
+                return p.children.some(
+                  (arr) => Array.isArray(arr) && arr.includes(b.id),
+                );
+              }
+              return false;
+            });
+
+            if (isChild) {
+              console.log(`🔍 Filtering out ${b.id} (${b.type}) - is child`);
+            }
+
+            return !isChild;
+          })}
           strategy={verticalListSortingStrategy}
         >
           <div
@@ -379,12 +652,39 @@ export default function EditablePage() {
               // Click vào background để deselect
               if (e.target === e.currentTarget) {
                 setSelectedBlockId(null);
+                setSelectedColumnInfo(null);
+                console.log("🔄 Cleared column selection");
               }
             }}
           >
             {blocks.map((block) => {
-              const isChild = blocks.some((b) =>
-                b.props.children?.includes(block.id),
+              const isChild = blocks.some((b) => {
+                // Check regular props.children
+                if (
+                  Array.isArray(b.props?.children) &&
+                  b.props.children.includes(block.id)
+                ) {
+                  return true;
+                }
+                // Check direct children array
+                if (
+                  Array.isArray(b.children) &&
+                  b.children.includes(block.id)
+                ) {
+                  return true;
+                }
+                // Check nested children array (for columns)
+                if (Array.isArray(b.children)) {
+                  return b.children.some(
+                    (arr) => Array.isArray(arr) && arr.includes(block.id),
+                  );
+                }
+                return false;
+              });
+
+              console.log(
+                `Block ${block.id} (${block.type}) isChild:`,
+                isChild,
               );
               if (isChild) return null;
               return (
@@ -410,6 +710,15 @@ export default function EditablePage() {
                       blocks={blocks}
                       onSelect={(id) => setSelectedBlockId(id)}
                       onChange={updateBlock}
+                      onSelectColumn={(parentId, columnIndex) => {
+                        setSelectedColumnInfo({ parentId, columnIndex });
+                        console.log(
+                          "🎯 Column selected:",
+                          parentId,
+                          columnIndex,
+                        );
+                      }}
+                      selectedColumnInfo={selectedColumnInfo}
                     />
                   </div>
                 </SortableItem>
@@ -420,12 +729,49 @@ export default function EditablePage() {
       </DndContext>
 
       <div className="w-80 max-h-[90vh] overflow-y-auto p-2 border-l flex flex-col gap-4 overflow-auto">
+        {selectedColumnInfo && (
+          <div className="bg-green-50 border border-green-200 rounded p-3">
+            <div className="text-green-700 font-semibold text-sm flex items-center gap-2">
+              🎯 Column Selected
+            </div>
+            <div className="text-green-600 text-xs mt-1">
+              Column {selectedColumnInfo.columnIndex + 1} ready for new
+              components
+            </div>
+            <button
+              onClick={() => setSelectedColumnInfo(null)}
+              className="text-xs text-green-600 hover:text-green-800 mt-2 underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
         <div className="min-h-[250px] max-h-64 overflow-auto border rounded p-2">
           <h2 className="text-lg font-semibold mb-2">Page Structure</h2>
           {blocks
-            .filter(
-              (b) => !blocks.some((p) => p.props.children?.includes(b.id)),
-            )
+            .filter((b) => {
+              return !blocks.some((p) => {
+                // Check regular props.children
+                if (
+                  Array.isArray(p.props?.children) &&
+                  p.props.children.includes(b.id)
+                ) {
+                  return true;
+                }
+                // Check direct children array
+                if (Array.isArray(p.children) && p.children.includes(b.id)) {
+                  return true;
+                }
+                // Check nested children array (for columns)
+                if (Array.isArray(p.children)) {
+                  return p.children.some(
+                    (arr) => Array.isArray(arr) && arr.includes(b.id),
+                  );
+                }
+                return false;
+              });
+            })
             .map((block) => renderTree(block))}
         </div>
 
